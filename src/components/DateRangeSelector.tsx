@@ -26,13 +26,25 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center gap-6">
-      <div className="flex flex-col">
-        <label 
-          className="block text-sm font-medium text-gray-700 mb-1 w-20"
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        padding: '4mm 4mm', // Spacing for top, bottom, and left
+        borderBottom: '1px solid #ccc', // Optional separator for header
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <label
           htmlFor="from-date"
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textAlign: 'right',
+          }}
         >
-          From Date
+          From:
         </label>
         <input
           id="from-date"
@@ -40,17 +52,25 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           value={fromDate}
           max={toDate}
           onChange={(e) => handleDateChange(true, e.target.value)}
-          className="block w-44 rounded-md border-gray-300 shadow-sm 
-                   focus:border-blue-500 focus:ring-blue-500 
-                   px-3 py-2 text-sm border"
+          style={{
+            padding: '5px',
+            borderRadius: '4px',
+            border: '1px solid #ccc',
+            fontSize: '14px',
+            width: '150px',
+          }}
         />
       </div>
-      <div className="flex flex-col">
-        <label 
-          className="block text-sm font-medium text-gray-700 mb-1 w-20"
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <label
           htmlFor="to-date"
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textAlign: 'right',
+          }}
         >
-          To Date
+          To:
         </label>
         <input
           id="to-date"
@@ -58,9 +78,13 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           value={toDate}
           min={fromDate}
           onChange={(e) => handleDateChange(false, e.target.value)}
-          className="block w-44 rounded-md border-gray-300 shadow-sm 
-                   focus:border-blue-500 focus:ring-blue-500 
-                   px-3 py-2 text-sm border"
+          style={{
+            padding: '5px',
+            borderRadius: '4px',
+            border: '1px solid #ccc',
+            fontSize: '14px',
+            width: '150px',
+          }}
         />
       </div>
     </div>
