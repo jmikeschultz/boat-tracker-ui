@@ -2,7 +2,9 @@
 export interface Position {
   latitude: number;
   longitude: number;
-  timestamp: string;
+  timestamp: number;   // Changed from string to number
+  time_zone: string;
+  speed: number;
 }
 
 export interface Config {
