@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMap, Popup } from "react-leaflet";
 import { Position } from "../types";
 import { LatLngBounds, LatLng } from "leaflet";
-import { formatTimestampWithZone } from '../utils/time';
+import { formatTimestamp } from '../utils/time';
 
 // Default center and zoom for the map
 const DEFAULT_CENTER: [number, number] = [48.7559, -122.5137];
@@ -61,7 +61,7 @@ export const BoatMap: React.FC<BoatMapProps> = ({ positions }) => {
                 <div>
                   <strong>Latitude:</strong> {pos.latitude.toFixed(6)} <br />
                   <strong>Longitude:</strong> {pos.longitude.toFixed(6)} <br />
-                  <strong>Time:</strong> {formatTimestampWithZone(pos.timestamp, pos.time_zone)} <br />
+                  <strong>Time:</strong> {formatTimestamp(pos.gmt_timestamp, pos.tz_offset)} <br />
                   <strong>Speed:</strong> {pos.speed?.toFixed(1) || '0.0'} kts
                 </div>
               </Popup>

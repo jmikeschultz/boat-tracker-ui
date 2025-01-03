@@ -9,9 +9,9 @@ export const subscribeToPositions = (
   onError: (error: Error) => void
 ): () => void => {
   // Start at midnight of the `fromDate` in UTC
-  const start = Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate(), 0, 0, 0);
+  const start = Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate(), 0, 0, 0) / 1000;
   // End at the last millisecond of the `toDate` in UTC
-  const end = Date.UTC(toDate.getUTCFullYear(), toDate.getUTCMonth(), toDate.getUTCDate(), 23, 59, 59, 999);
+  const end = Date.UTC(toDate.getUTCFullYear(), toDate.getUTCMonth(), toDate.getUTCDate(), 23, 59, 59, 999) / 1000;
 
   // Debug logs
   console.log("[subscribeToPositions] Firestore query range:");
@@ -21,9 +21,9 @@ export const subscribeToPositions = (
   // Firestore query
   const q = query(
     collection(db, "gps_data"),
-    where("timestamp", ">=", start),
-    where("timestamp", "<=", end),
-    orderBy("timestamp", "asc")
+    where("gmt_timestamp", ">=", start),
+    where("gmt_timestamp", "<=", end),
+    orderBy("gmt_timestamp", "asc")
   );
 
   return onSnapshot(
@@ -35,8 +35,8 @@ export const subscribeToPositions = (
         return {
           latitude: data.latitude,
           longitude: data.longitude,
-          timestamp: data.timestamp,
-          time_zone: data.time_zone || "Unknown",
+          gmt_timestamp: data.gmt_timestamp,
+          tz_offset: data.tz_offset || "Unknown",
           speed: data.speed || 0  // Add speed field with default of 0
         };
       });
