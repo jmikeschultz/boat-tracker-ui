@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="map" style="height: 400px; width: 100%;"></div>
+<script>
+    const positions = {{ positions | tojson }};
+
+    const map = L.map('map').setView([48.7559, -122.5137], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    const breadcrumbCoords = positions.map(pos => [pos.latitude, pos.longitude]);
+    const breadcrumbLine = L.polyline(breadcrumbCoords, { color: 'blue' }).addTo(map);
+    map.fitBounds(breadcrumbLine.getBounds());
+
+    positions.forEach(pos => {
+        L.marker([pos.latitude, pos.longitude])
+            .bindPopup(`Time: ${new Date(pos.gmt_timestamp * 1000).toLocaleString()}<br>Speed: ${pos.speed.toFixed(2)} knots`)
+            .addTo(map);
+    });
+</script>
+{% endblock %}
