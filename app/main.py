@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
+from google.cloud import firestore
 from .services.firestore import fetch_positions
 
 app = FastAPI()
@@ -31,27 +32,19 @@ async def get_positions(
     Fetch positions within the specified date range.
     """
     try:
-        # Parse YYYYMMDD into datetime objects
-        from_datetime = datetime.strptime(from_date, "%Y%m%d")
-        to_datetime = datetime.strptime(to_date, "%Y%m%d")
-
-        # Convert to UNIX timestamps in seconds
-        from_timestamp = int(from_datetime.timestamp())
-        to_timestamp = int(to_datetime.timestamp())
+        # Parse YYYYMMDD into utc timezone aware datetime objects
+        fdate = f'{from_date}0001 +0000'
+        tdate = f'{to_date}2359 +0000'
+        from_datetime = datetime.strptime(fdate, "%Y%m%d%H%M %z")
+        to_datetime = datetime.strptime(tdate, "%Y%m%d%H%M %z")
+        db = firestore.Client()
 
         # Debugging print statements
-        print(f"Debug: from_date={from_date}, to_date={to_date}")
-        print(f"Debug: from_datetime={from_datetime}, to_datetime={to_datetime}")
-        print(f"Debug: from_timestamp={from_timestamp}, to_timestamp={to_timestamp}")
-
-        # Ensure the date range is valid
-        if from_timestamp > to_timestamp:
-            print("Debug: Invalid date range")
-            raise HTTPException(status_code=400, detail="from_date must be less than or equal to to_date")
+        print(f"Main: from_date={from_date}, to_date={to_date}")
 
         # Fetch positions
-        positions = await fetch_positions(from_timestamp, to_timestamp)
-        #print(f"Debug: Fetched positions: {positions}")
+        positions = await fetch_positions(db, from_datetime, to_datetime)
+        #print(f"Main: Fetched positions: {positions}")
 
         return {"positions": positions}
 

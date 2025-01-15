@@ -1,7 +1,7 @@
 export function updateSpeedGraph(positions) {
     const ctx = document.getElementById("speed-graph").getContext("2d");
 
-    const labels = positions.map(pos => new Date(pos.gmt_timestamp * 1000).toISOString().split("T")[0]);
+    const labels = positions.map(pos => new Date(pos.utc_shifted_tstamp * 1000).toISOString().split("T")[0]);
     const speeds = positions.map(pos => pos.speed);
 
     if (window.speedChart) {

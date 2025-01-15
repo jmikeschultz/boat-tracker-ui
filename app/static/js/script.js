@@ -10,10 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Set default values to today's date
-    const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
-    fromDateInput.value = today;
-    toDateInput.value = today;
+    // Set default values to today's date in local time
+    const today = new Date();
+    const localDate = today.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
+    fromDateInput.value = localDate;
+    toDateInput.value = localDate;
 
     // Automatically load data for today's date range on page load
     loadData();

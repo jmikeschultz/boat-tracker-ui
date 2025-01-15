@@ -1,8 +1,7 @@
 from google.cloud import firestore
+from datetime import datetime
 
-db = firestore.Client()
-
-async def fetch_positions(from_timestamp: int, to_timestamp: int):
+async def fetch_positions(db, from_datetime: datetime, to_datetime: datetime):
     """
     Fetch positions from Firestore based on UNIX timestamp range.
 
@@ -13,21 +12,33 @@ async def fetch_positions(from_timestamp: int, to_timestamp: int):
     Returns:
         List[Dict]: List of position records from Firestore.
     """
-    query = db.collection("gps_data")
-    query = query.where("gmt_timestamp", ">=", from_timestamp)  # Filter start
-    query = query.where("gmt_timestamp", "<=", to_timestamp)    # Filter end
-    query = query.order_by("gmt_timestamp")  # Sort by timestamp
+
+    # these are timezone aware and shifted to utc
+    print(f'firestore.py {from_datetime} {to_datetime}')
+
+     # Convert to UNIX timestamps in seconds
+    from_timestamp = int(from_datetime.timestamp())
+    to_timestamp = int(to_datetime.timestamp())
+
+    query = db.collection("gps_data1")
+    query = query.where("utc_shifted_tstamp", ">=", from_timestamp)  # Filter start
+    query = query.where("utc_shifted_tstamp", "<=", to_timestamp)    # Filter end
+    query = query.order_by("utc_shifted_tstamp")  # Sort by timestamp
 
     docs = query.stream()
-    positions = [
-        {
-            "latitude": doc.to_dict().get("latitude"),
-            "longitude": doc.to_dict().get("longitude"),
-            "speed": doc.to_dict().get("speed"),
-            "gmt_timestamp": doc.to_dict().get("gmt_timestamp"),
-            "tz_offset": doc.to_dict().get("tz_offset"),
+    positions = []
+    for doc in docs:
+        doc_data = doc.to_dict()  # Call to_dict() once
+        position = {
+            "latitude": doc_data.get("latitude"),
+            "longitude": doc_data.get("longitude"),
+            "utc_shifted_tstamp": doc_data.get("utc_shifted_tstamp"),
+            "tz_offset": doc_data.get("tz_offset"),
         }
-        for doc in docs
-    ]
-    #print(f"Debug: Fetched positions: {positions}")  # Debugging
+        # Add additional fields if needed
+        position["speed"] = 15  # Example
+
+        positions.append(position)
+
+    print(f"services/Firestore.py: Fetched positions: {positions}")  # Debugging
     return positions

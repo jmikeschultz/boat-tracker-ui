@@ -4,7 +4,7 @@ const graphCtx = document.createElement('canvas');
 document.getElementById("graph-container").appendChild(graphCtx);
 
 const speedData = positions.map(pos => ({
-    x: new Date(pos.gmt_timestamp * 1000),
+    x: new Date(pos.utc_shifted_tstamp * 1000),
     y: pos.speed,
 }));
 
