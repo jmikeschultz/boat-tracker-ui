@@ -33,10 +33,11 @@ async def get_positions(
     """
     try:
         # Parse YYYYMMDD into utc timezone aware datetime objects
-        fdate = f'{from_date}0001 +0000'
-        tdate = f'{to_date}2359 +0000'
-        from_datetime = datetime.strptime(fdate, "%Y%m%d%H%M %z")
-        to_datetime = datetime.strptime(tdate, "%Y%m%d%H%M %z")
+        # boat-tracker logs utc_shifted_tstamps and tz_offset
+        fdate = f'{from_date} 0001 +0000'
+        tdate = f'{to_date} 2359 +0000'
+        from_datetime = datetime.strptime(fdate, "%Y%m%d %H%M %z")
+        to_datetime = datetime.strptime(tdate, "%Y%m%d %H%M %z")
         db = firestore.Client()
 
         # Debugging print statements

@@ -2,7 +2,10 @@ export function updateSpeedGraph(positions) {
     const ctx = document.getElementById("speed-graph").getContext("2d");
 
     const labels = positions.map(pos => new Date(pos.utc_shifted_tstamp * 1000).toISOString().split("T")[0]);
-    const speeds = positions.map(pos => pos.speed);
+    const speeds = positions.map(pos => pos.knots);
+
+    const maxSpeed = Math.max(...speeds); // Find the maximum speed in the dataset
+    const yAxisMax = Math.max(10, maxSpeed); // Use 10 if maxSpeed is less than 10
 
     if (window.speedChart) {
         window.speedChart.destroy();
@@ -36,6 +39,7 @@ export function updateSpeedGraph(positions) {
                     },
                 },
                 y: {
+                    max:yAxisMax,
                     title: {
                         display: true,
                         text: "Speed (knots)",

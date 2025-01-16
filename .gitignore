@@ -1,0 +1,9 @@
+# Ignore Python bytecode
+*.pyc
+
+# Ignore __pycache__ directories
+__pycache__/
+
+# Other ignored files
+node_modules/
+.env

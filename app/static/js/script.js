@@ -12,9 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Set default values to today's date in local time
     const today = new Date();
-    const localDate = today.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
-    fromDateInput.value = localDate;
-    toDateInput.value = localDate;
+    const localTo = today.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
+
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const localFrom = weekAgo.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
+
+    fromDateInput.value = localFrom;
+    toDateInput.value = localTo;
 
     // Automatically load data for today's date range on page load
     loadData();
