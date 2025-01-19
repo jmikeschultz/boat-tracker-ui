@@ -21,10 +21,12 @@ export async function loadData() {
     try {
         const response = await fetch(`/positions?from_date=${fromDate}&to_date=${toDate}`);
         const data = await response.json();
-        console.log("Received positions:", data.positions);
+        //console.log("Received positions:", data.positions);
+        console.log("from_timestamp:", data.from_timestamp)
+        console.log("to_timestamp:", data.to_timestamp)
 
         if (data.positions && data.positions.length > 0) {
-            updateSpeedGraph(data.positions);
+            updateSpeedGraph(data.positions, data.from_timestamp, data.to_timestamp);
             updateMap(data.positions);
         } else {
             console.warn("No positions available for the selected range.");

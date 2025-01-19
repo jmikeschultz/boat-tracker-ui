@@ -11,23 +11,22 @@ export function updateMap(positions) {
         }).addTo(map);
     }
 
-    // Clear all existing layers (e.g., markers, polylines)
+    // Clear all existing polylines from the map
     map.eachLayer(layer => {
-        if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+        if (layer instanceof L.Polyline) {
             map.removeLayer(layer);
         }
     });
 
-    // Add new markers and paths for the current positions
-    positions.forEach(pos => {
-        L.marker([pos.latitude, pos.longitude]).addTo(map)
-            .bindPopup(`Speed: ${pos.speed || "N/A"} knots`);
-    });
-
+    // Extract latitude and longitude from positions
     const latLngs = positions.map(pos => [pos.latitude, pos.longitude]);
+
+    // Add a single polyline for the route
     if (latLngs.length > 1) {
-        L.polyline(latLngs, { color: "blue" }).addTo(map);
-        map.fitBounds(latLngs, { padding: [50, 50] });
+        const polyline = L.polyline(latLngs, { color: "blue", weight: 4 }).addTo(map);
+        map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+    } else {
+        console.warn("Not enough points to draw a route.");
     }
 }
 
@@ -36,6 +35,7 @@ export function clearGraphAndMap() {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     if (map) {
+        // Clear all markers and polylines from the map
         map.eachLayer(layer => {
             if (layer instanceof L.Marker || layer instanceof L.Polyline) {
                 map.removeLayer(layer);

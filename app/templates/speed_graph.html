@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+
 {% block content %}
 <div id="graph-container" style="height: 400px; width: 100%;"></div>
 <script>
@@ -9,7 +13,7 @@
     document.getElementById("graph-container").appendChild(graphCtx);
 
     const speedData = positions.map(pos => ({
-        x: new Date(pos.utc_shifted_tstamp * 1000),
+        x: new Date(pos.utc_shifted_tstamp * 1000).toISOString(),
         y: pos.speed,
     }));
 

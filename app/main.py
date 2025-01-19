@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 from google.cloud import firestore
-from .services.firestore import fetch_positions
+from .services.firestore import fs_fetch_positions
 
 app = FastAPI()
 
@@ -32,22 +32,24 @@ async def get_positions(
     Fetch positions within the specified date range.
     """
     try:
+        print(f"main.py: from_date={from_date}, to_date={to_date}")
         # Parse YYYYMMDD into utc timezone aware datetime objects
         # boat-tracker logs utc_shifted_tstamps and tz_offset
         fdate = f'{from_date} 0001 +0000'
         tdate = f'{to_date} 2359 +0000'
         from_datetime = datetime.strptime(fdate, "%Y%m%d %H%M %z")
         to_datetime = datetime.strptime(tdate, "%Y%m%d %H%M %z")
+
+        # Convert to UNIX timestamps in seconds
+        from_timestamp = int(from_datetime.timestamp())
+        to_timestamp = int(to_datetime.timestamp())        
+        print(f'main.py: from_timestamp:{from_timestamp} to_timestamp:{to_timestamp}')
+
         db = firestore.Client()
+        positions = await fs_fetch_positions(db, from_timestamp, to_timestamp)
+        print(f"main.py: Fetched positions: {positions[0]}")  # Debugging
 
-        # Debugging print statements
-        print(f"Main: from_date={from_date}, to_date={to_date}")
-
-        # Fetch positions
-        positions = await fetch_positions(db, from_datetime, to_datetime)
-        #print(f"Main: Fetched positions: {positions}")
-
-        return {"positions": positions}
+        return {'positions': positions, 'from_timestamp': from_timestamp, 'to_timestamp': to_timestamp}
 
     except ValueError as e:
         print(f"Error: Invalid date format: {e}")

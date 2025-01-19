@@ -25,8 +25,7 @@ def get_knots(prev_pos, pos):
 
     return (mph * 0.868976) # 
 
-
-async def fetch_positions(db, from_datetime: datetime, to_datetime: datetime):
+async def fs_fetch_positions(db, from_timestamp: int, to_timestamp: int):
     """
     Fetch positions from Firestore based on UNIX timestamp range.
 
@@ -37,13 +36,6 @@ async def fetch_positions(db, from_datetime: datetime, to_datetime: datetime):
     Returns:
         List[Dict]: List of position records from Firestore.
     """
-
-    # these are timezone aware and shifted to utc
-    print(f'firestore.py {from_datetime} {to_datetime}')
-
-     # Convert to UNIX timestamps in seconds
-    from_timestamp = int(from_datetime.timestamp())
-    to_timestamp = int(to_datetime.timestamp())
 
     query = db.collection("gps_data1")
     query = query.where("utc_shifted_tstamp", ">=", from_timestamp)  # Filter start
@@ -59,6 +51,4 @@ async def fetch_positions(db, from_datetime: datetime, to_datetime: datetime):
         positions.append(pos)
         prev_pos = pos
 
-
-    #print(f"services/Firestore.py: Fetched positions: {positions}")  # Debugging
     return positions
