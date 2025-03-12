@@ -1,23 +1,39 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Tracker - Map</title>
 
-{% block content %}
-<div id="map" style="height: 400px; width: 100%;"></div>
-<script>
-    const positions = {{ positions | tojson }};
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-    const map = L.map('map').setView([48.7559, -122.5137], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-    }).addTo(map);
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Boat Tracker - Map</h1>
+    </header>
 
-    const breadcrumbCoords = positions.map(pos => [pos.latitude, pos.longitude]);
-    const breadcrumbLine = L.polyline(breadcrumbCoords, { color: 'blue' }).addTo(map);
-    map.fitBounds(breadcrumbLine.getBounds());
+    <div id="map" style="height: 400px; width: 100%;"></div>
 
-    positions.forEach(pos => {
-        L.marker([pos.latitude, pos.longitude])
-            .bindPopup(`Time: ${new Date(pos.utc_shifted_timestamp * 1000).toLocaleString()}<br>Speed: ${pos.speed.toFixed(2)} knots`)
-            .addTo(map);
-    });
-</script>
-{% endblock %}
+    <script>
+        const positions = {{ positions | tojson }};
+
+        const map = L.map('map').setView([48.7559, -122.5137], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+        }).addTo(map);
+
+        const breadcrumbCoords = positions.map(pos => [pos.latitude, pos.longitude]);
+        const breadcrumbLine = L.polyline(breadcrumbCoords, { color: 'blue' }).addTo(map);
+        map.fitBounds(breadcrumbLine.getBounds());
+
+        positions.forEach(pos => {
+            L.marker([pos.latitude, pos.longitude])
+                .bindPopup(`Time: ${new Date(pos.utc_shifted_tstamp * 1000).toLocaleString()}<br>Speed: ${pos.speed.toFixed(2)} knots`)
+                .addTo(map);
+        });
+    </script>
+</body>
+</html>

@@ -5,27 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boat Tracker</title>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chart.js Date Adapter -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-
-    <!-- Leaflet -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-    <!-- Your custom script -->
+    <!-- Chart.js & Leaflet -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
     <script type="module" src="/static/js/script.js" defer></script>
 </head>
 <body>
-    <h1>Boat Tracker</h1>
+    <header>
+        <h1>Boat Tracker</h1>
+        <div id="engine-hours-container">
+            <strong>Engine Hours:</strong> <span id="engine-hours">--</span> hrs
+        </div>
+    </header>
+
     <label for="from-date">From:</label>
     <input type="date" id="from-date" />
     <label for="to-date">&nbsp;To:</label>
     <input type="date" id="to-date" />
     <button id="load-button">Load Data</button>
 
-    <canvas id="speed-graph" width="800" height="200"></canvas>
     <div id="map" style="height: 500px;"></div>
+    <canvas id="speed-graph" width="800" height="200"></canvas>
+
+    <script type="module">
+      import { updateEngineHours } from "/static/js/api.js";
+      document.addEventListener("DOMContentLoaded", updateEngineHours);
+    </script>
+
 </body>
 </html>

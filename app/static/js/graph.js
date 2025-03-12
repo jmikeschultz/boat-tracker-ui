@@ -1,49 +1,58 @@
 export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
     const ctx = document.getElementById("speed-graph").getContext("2d");
 
-    //const fromDateInput = document.getElementById("from-date").value;
-    //const toDateInput = document.getElementById("to-date").value;
+    console.log("graph.js fromTimestamp (GMT):", from_timestamp);
+    console.log("graph.js toTimestamp (GMT):", to_timestamp);
 
-    //console.log("fromDateInput (raw):", fromDateInput);
-    //console.log("toDateInput (raw):", toDateInput);
-
-    // gmt shifted time
-    //const fromDate = new Date(${fromDateInput}T00:00:00+0000);
-    //const toDate = new Date(${toDateInput}T23:59:59+0000);
-
-    //const fromTimestamp = fromDate.getTime() / 1000;
-    //const toTimestamp = toDate.getTime() / 1000;
-
-    console.log("fromTimestamp (GMT):", from_timestamp);
-    console.log("toTimestamp (GMT):", to_timestamp);
-
+    // Ensure timestamps are included even if there's no data at the edges
     const adjustedPositions = [
-        { utc_shifted_tstamp: from_timestamp, knots: 0 },
+        { utc_shifted_tstamp: from_timestamp, knots: 0, rpm: 0 },
         ...positions,
-        { utc_shifted_tstamp: to_timestamp, knots: 0 },
+        { utc_shifted_tstamp: to_timestamp, knots: 0, rpm: 0 },
     ];
 
-    const data = adjustedPositions.map(pos => ({
-        x: pos.utc_shifted_tstamp * 1000,
+    // Extract data points
+    const speedData = adjustedPositions.map(pos => ({
+        x: pos.utc_shifted_tstamp * 1000,  // Convert to milliseconds
         y: pos.knots,
     }));
 
-    const maxSpeed = Math.max(...positions.map(pos => pos.knots));
-    const yAxisMax = Math.max(10, maxSpeed);
+    const rpmData = adjustedPositions.map(pos => ({
+        x: pos.utc_shifted_tstamp * 1000,
+        y: pos.rpm,
+    }));
 
+    console.log("RPM Data:", rpmData);
+
+    // Determine y-axis limits
+    const maxSpeed = Math.max(...positions.map(pos => pos.knots), 10);
+    const maxRPM = Math.max(...positions.map(pos => pos.rpm), 2000);  // Ensure RPM is visible
+
+    // Destroy previous chart if it exists
     if (window.speedChart) {
         window.speedChart.destroy();
     }
 
+    // Create the new graph with dual y-axes
     window.speedChart = new Chart(ctx, {
         type: "line",
         data: {
             datasets: [
                 {
                     label: "Speed (knots)",
-                    data: data,
+                    data: speedData,
                     borderColor: "blue",
+                    borderWidth: 2,
                     fill: false,
+                    yAxisID: "ySpeed",
+                },
+                {
+                    label: "RPM",
+                    data: rpmData,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    fill: false,
+                    yAxisID: "yRpm",
                 },
             ],
         },
@@ -52,27 +61,33 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
             maintainAspectRatio: true,
             scales: {
                 x: {
-                    type: "time", // Use time scale for the x-axis
+                    type: "time",
                     time: {
-                        unit: "day", // Display one tick per day
-                        stepSize: 1,
-                        displayFormats: {
-                            day: "MMM d", // Format ticks as "Jan 1"
-                        },
-                        tooltipFormat: "MMM d, yyyy HH:mm", // Tooltip format
+                        unit: "day",
+                        displayFormats: { day: "MMM d" },
+                        tooltipFormat: "MMM d, yyyy HH:mm",
                     },
-                    title: {
-                        display: true,
-                        text: "Date (GMT)",
-                    },
+                    title: { display: true, text: "Date (GMT)" },
                 },
-                y: {
-                    max: yAxisMax,
-                    title: {
-                        display: true,
-                        text: "Speed (knots)",
-                    },
+                ySpeed: {
+                    type: "linear",
+                    position: "left",
+                    title: { display: true, text: "Speed (knots)" },
+                    min: 0, 
+                    max: maxSpeed,
+                    grid: { drawOnChartArea: false },
                 },
+                yRpm: {  // ✅ Fixed: This now matches the dataset ID
+                    type: "linear",
+                    position: "right",
+                    title: { display: true, text: "RPM" },
+                    min: 500, 
+                    max: maxRPM,
+                    grid: { drawOnChartArea: false },
+                },
+            },
+            plugins: {
+                legend: { display: true },
             },
         },
     });

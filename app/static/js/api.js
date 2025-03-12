@@ -1,6 +1,23 @@
 import { updateSpeedGraph } from "./graph.js";
 import { updateMap, clearGraphAndMap } from "./map.js";
 
+export async function updateEngineHours() {
+    try {
+        console.log("Fetching latest engine hours...");
+        const response = await fetch("/engine-hours/latest");
+        const data = await response.json();
+        console.log("API response:", data);
+
+        if (data.engine_hours !== null && data.engine_hours !== undefined) {
+            document.getElementById("engine-hours").textContent = data.engine_hours;
+        } else {
+            console.warn("No engine hours data available.");
+        }
+    } catch (error) {
+        console.error("Failed to fetch engine hours:", error);
+    }
+}
+
 export async function loadData() {
     console.log("loadData function triggered");
 

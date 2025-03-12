@@ -1,45 +1,57 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Tracker - Speed Graph</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <header>
+        <h1>Boat Tracker - Speed Graph</h1>
+    </header>
 
-{% block content %}
-<div id="graph-container" style="height: 400px; width: 100%;"></div>
-<script>
-    const positions = {{ positions | tojson }};
+    <div id="graph-container" style="height: 400px; width: 100%;"></div>
 
-    const graphCtx = document.createElement('canvas');
-    document.getElementById("graph-container").appendChild(graphCtx);
+    <script>
+        const positions = {{ positions | tojson }};
 
-    const speedData = positions.map(pos => ({
-        x: new Date(pos.utc_shifted_tstamp * 1000).toISOString(),
-        y: pos.speed,
-    }));
+        const graphCtx = document.createElement('canvas');
+        document.getElementById("graph-container").appendChild(graphCtx);
 
-    new Chart(graphCtx, {
-        type: 'line',
-        data: {
-            datasets: [{
-                label: "Speed (knots)",
-                data: speedData,
-                borderColor: "blue",
-                fill: false,
-            }],
-        },
-        options: {
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'hour',
+        const speedData = positions.map(pos => ({
+            x: new Date(pos.utc_shifted_tstamp * 1000).toISOString(),
+            y: pos.speed,
+        }));
+
+        new Chart(graphCtx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: "Speed (knots)",
+                    data: speedData,
+                    borderColor: "blue",
+                    fill: false,
+                }],
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'hour',
+                        },
+                    },
+                    y: {
+                        beginAtZero: true,
                     },
                 },
-                y: {
-                    beginAtZero: true,
-                },
             },
-        },
-    });
-</script>
-{% endblock %}
+        });
+    </script>
+</body>
+</html>
