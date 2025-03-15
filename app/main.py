@@ -66,15 +66,16 @@ async def get_positions(
 @app.get("/engine-hours/latest")
 async def get_latest_engine_hours():
     """Fetch the latest recorded engine hours from Firestore."""
-    db = firestore.Client()
+    #db = firestore.Client()
 
-    query = db.collection("gps_data1").order_by("utc_shifted_tstamp", direction=firestore.Query.DESCENDING).limit(1)
-    docs = query.stream()
+    #query = db.collection("gps_data").where("engine_hours", ">", 0).order_by("utc_shifted_tstamp", direction=firestore.Query.DESCENDING).limit(1)
+    #docs = query.stream()
 
-    latest_position = next(docs, None)
-    if not latest_position:
-        return {"engine_hours": None}  # No data found
+    #latest_position = next(docs, None)
+    #if not latest_position:
+    #    return {"engine_hours": None}  # No data found
 
-    data = latest_position.to_dict()
-    return {"engine_hours": data.get("engine_hours", None)}
+    #data = latest_position.to_dict()
+    #return {"engine_hours": data.get("engine_hours", None)}
+    return {"engine_hours": '?'}
     

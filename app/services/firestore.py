@@ -37,7 +37,7 @@ async def fs_fetch_positions(db, from_timestamp: int, to_timestamp: int):
         List[Dict]: List of position records from Firestore.
     """
 
-    query = db.collection("gps_data1")
+    query = db.collection("gps_data")
     query = query.where("utc_shifted_tstamp", ">=", from_timestamp)  # Filter start
     query = query.where("utc_shifted_tstamp", "<=", to_timestamp)    # Filter end
     query = query.order_by("utc_shifted_tstamp")  # Sort by timestamp
