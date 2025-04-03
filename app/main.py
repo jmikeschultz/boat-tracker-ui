@@ -43,7 +43,7 @@ async def get_positions(
 
         print(f"main.py: from_timestamp={from_timestamp}, to_timestamp={to_timestamp}")
 
-        db = firestore.Client()
+        db = firestore.Client(project="boat-crumbs")
         positions = await fs_fetch_positions(db, from_timestamp, to_timestamp)
 
         if positions:
