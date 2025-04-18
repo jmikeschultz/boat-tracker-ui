@@ -1,9 +1,6 @@
 import { highlightMapPoint } from "./map.js";
-
+import { SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES} from "./constants.js";
 let graphPositions = [];
-
-const MAX_TIME_GAP = 300; // seconds
-const MAX_DISTANCE_GAP = 1.0; // miles
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 3958.8; // Earth radius in miles
@@ -16,8 +13,29 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function parseLocalTimestamp(localTimeStr) {
+    const [datePart, timePart] = localTimeStr.split(" ");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute, secondFraction] = timePart.split(":");
+    const [second, ms = "0"] = secondFraction.split(".");
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+        Number(ms.slice(0, 3)) // trim to milliseconds
+    );
+    return date.getTime(); // interpreted in browser-local time (which is fine for consistency)
+}
+
 export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
     const ctx = document.getElementById("speed-graph").getContext("2d");
+
+    const canvas = ctx.canvas;
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
 
     graphPositions = positions;
 
@@ -26,7 +44,7 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
 
     for (let i = 0; i < positions.length; i++) {
         const pos = positions[i];
-        const timestampMs = pos.utc_shifted_tstamp * 1000;
+        const timestampMs = parseLocalTimestamp(pos.local_time);
 
         if (i > 0) {
             const prev = positions[i - 1];
@@ -36,7 +54,7 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
                 prev.latitude, prev.longitude
             );
 
-            if (timeGap > MAX_TIME_GAP || distGap > MAX_DISTANCE_GAP) {
+            if (timeGap > SEGMENT_MAX_GAP_SECS || distGap > SEGMENT_MAX_GAP_MILES) {
                 speedData.push({ x: timestampMs, y: null });
                 rpmData.push({ x: timestampMs, y: null });
             }
@@ -102,7 +120,7 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
                         displayFormats: { day: "MMM d" },
                         tooltipFormat: "MMM d, yyyy HH:mm",
                     },
-                    title: { display: true, text: "Date (GMT)" },
+                    title: { display: true, text: "Local Time (from Data)" },
                 },
                 ySpeed: {
                     type: "linear",
@@ -138,7 +156,10 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
             const point = window.speedChart.data.datasets[0].data[index];
             const timestampMs = point.x;
 
-            const match = graphPositions.find(p => p.utc_shifted_tstamp * 1000 === timestampMs);
+            const match = graphPositions.find(p => {
+                return parseLocalTimestamp(p.local_time) === timestampMs;
+            });
+
             if (match) {
                 highlightMapPoint(match.latitude, match.longitude);
             }
@@ -165,7 +186,14 @@ export function highlightGraphPoint(timestampSec) {
     const chart = window.speedChart;
     if (!chart) return;
 
-    const timestampMs = timestampSec * 1000;
+    //const timestampMs = timestampSec * 1000;
+    const match = graphPositions.find(p =>
+	Math.abs(p.utc_shifted_tstamp - timestampSec) < 1
+    );
+
+    if (!match) return;
+    const timestampMs = parseLocalTimestamp(match.local_time);
+
     const dataset = chart.data.datasets[0].data;
 
     // Find the closest index in the dataset

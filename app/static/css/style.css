@@ -1,7 +1,10 @@
-body {
-    font-family: Arial, sans-serif;
+html, body {
+    height: 100%;
     margin: 0;
     padding: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
 }
 
 header {
@@ -23,7 +26,69 @@ main {
     padding: 20px;
 }
 
+/* ✅ Fix date pickers layout */
+#controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    flex-wrap: wrap;
+}
+
+#controls label,
+#controls input,
+#controls button {
+    font-size: 14px;
+}
+
+/* ✅ New layout for map + resizable graph */
+#main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    overflow: hidden;
+}
+
+#map-container {
+    flex-grow: 1;
+    position: relative;
+}
+
 #map {
-    margin-top: 20px;
-    border: 1px solid #ccc;
+    height: 100%;
+    width: 100%;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+#resizer {
+    height: 6px;
+    background: #aaa;
+    cursor: row-resize;
+}
+
+#graph-container {
+    height: 30%;
+    min-height: 100px;
+    width: 100%;
+    flex-shrink: 0;
+    flex-grow: 0;
+    flex-basis: auto;
+    display: block;
+}
+
+#speed-graph {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* Play button icon */
+.play-button-icon {
+    font-size: 16px;
+    cursor: pointer;
+    user-select: none;
+    text-align: center;
+    line-height: 1;
 }

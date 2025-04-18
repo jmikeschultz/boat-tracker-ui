@@ -1,9 +1,11 @@
 from google.cloud import firestore
 from datetime import datetime, timedelta, timezone
 import asyncio
-from app.services.firestore import fetch_positions
+from app.services.firestore import fs_fetch_positions
 import json
 import re
+import os
+import sys
 import traceback
 import app.utils.mytime as mytime
 from geopy.distance import geodesic
@@ -11,66 +13,47 @@ from geopy.distance import geodesic
 # Initialize Firestore client
 db = firestore.Client(project="boat-crumbs")
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Calculate the distance between two lat/lon points in miles."""
-    return geodesic((lat1, lon1), (lat2, lon2)).miles
-
-def get_values(position):
-    lat = position.get('latitude')
-    lon = position.get('longitude')
-    utc_shifted_tstamp = position.get('utc_shifted_tstamp')
-    tz_offset = position.get('tz_offset')
-    return lat, lon, utc_shifted_tstamp, tz_offset
-
-def process_record(position, last_position):
-    lat, lon, utc_shifted_tstamp, tz_offset = get_values(position)
-    last_position = position if not last_position else last_position
-    last_lat, last_lon, last_utc_shifted_tstamp, last_tz_offset = get_values(last_position)
-
-    delta_miles = calculate_distance(last_lat, last_lon, lat, lon)
-    delta_secs = (float) (utc_shifted_tstamp - last_utc_shifted_tstamp)
-    delta_hrs = delta_secs / 3600.0
-    my_speed = (delta_miles / delta_hrs) if delta_hrs else 0.0
-
-    local_tz = mytime.get_timezone(tz_offset)
-    local_tstamp = mytime.unshift_timestamp(utc_shifted_tstamp, local_tz)
-
-    position['delta_miles'] = delta_miles
-    position['delta_secs'] = delta_secs
-    position['miles_per_hour'] = my_speed
-
-    position['utc_shifted_time'] = str(datetime.fromtimestamp(utc_shifted_tstamp, timezone.utc))
-    position['local_time'] = str(datetime.fromtimestamp(local_tstamp, local_tz))
-    print(json.dumps(position, indent=2))
-
-
-
 async def main():
     """
     Test script to fetch positions from Firestore for a date range.
     """
-    # Calculate today's date and a week ago
-    today = datetime.now(tz=timezone.utc)
-    a_week_ago = today - timedelta(days=10)
+    if len(sys.argv) != 3:
+        script = sys.argv[0]
+        print(f'usage:{script} <endDate> <numDays>')
+        print('<endDate> = MM-DD-YYYY or TODAY')
+        print('<numDays> = number of days going backward including endDate')
+        sys.exit(-1)
 
-    print(today)
+    end_date_arg = sys.argv[1].upper()
+    num_days = int(sys.argv[2])
 
-    # Convert to UNIX timestamps (seconds)
-    from_timestamp = int(a_week_ago.timestamp())
-    to_timestamp = int(today.timestamp())
+     # Parse end date (normalize to 00:00 UTC start of day)
+    if end_date_arg == "TODAY":
+        end_dt = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        try:
+            end_dt = datetime.strptime(end_date_arg, "%m-%d-%Y").replace(tzinfo=timezone.utc)
+        except ValueError:
+            print("Invalid date format. Use MM-DD-YYYY or TODAY.")
+            sys.exit(-1)
 
-    print(f"Fetching positions from {a_week_ago} to {today}...")
+    # Start of first day in the range
+    start_dt = end_dt - timedelta(days=num_days - 1)
+    # End of last day: 23:59:59.999999
+    end_of_last_day = end_dt + timedelta(days=1) - timedelta(microseconds=1)
+
+    from_timestamp = int(start_dt.timestamp())
+    to_timestamp = int(end_of_last_day.timestamp())
+
+    print(f"Fetching positions from {start_dt} to {end_of_last_day}...")
     print(f"From timestamp: {from_timestamp}, To timestamp: {to_timestamp}")
 
     # Call the fetch_positions function
     try:
-        last_position = None
-
-        positions = await fetch_positions(db, from_timestamp, to_timestamp)
+        positions = await fs_fetch_positions(db, from_timestamp, to_timestamp)
         print(f"Fetched {len(positions)} positions")
         for position in positions:
-            process_record(position, last_position)
-            last_position = position
+            print(json.dumps(position, indent=2))
 
     except Exception as e:
         print(f"An error occurred: {e}")

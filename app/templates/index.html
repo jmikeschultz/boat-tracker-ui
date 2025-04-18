@@ -1,42 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boat Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boat Tracker</title>
 
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-    <!-- Chart.js & Leaflet -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-    <script type="module" src="/static/js/script.js" defer></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%2210 0 100 100%22><text y=%22.90em%22 font-size=%2290%22>⚓</text></svg>"></link>
+  <!-- Your app logic -->
+  <script type="module" src="/static/js/script.js" defer></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%2210 0 100 100%22><text y=%22.90em%22 font-size=%2290%22>⚓</text></svg>">
 </head>
 <body>
-    <header>
-        <h1>Boat Tracker</h1>
-        <div id="engine-hours-container">
-            <strong>Engine Hours:</strong> <span id="engine-hours">--</span> hrs
-        </div>
-    </header>
+  <header>
+    <h1>Boat Tracker</h1>
+    <div id="engine-hours-container">
+      <strong>Engine Hours:</strong> <span id="engine-hours">--</span> hrs
+    </div>
+  </header>
 
+  <!-- Controls -->
+  <div id="controls">
     <label for="from-date">From:</label>
     <input type="date" id="from-date" />
-    <label for="to-date">&nbsp;To:</label>
+    <label for="to-date">To:</label>
     <input type="date" id="to-date" />
     <button id="load-button">Load Data</button>
+  </div>
 
-    <div id="map" style="height: 500px;"></div>
-    <canvas id="speed-graph" width="800" height="200"></canvas>
+  <!-- Map + Graph Resizable Layout -->
+  <div id="main-container">
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+    <div id="resizer"></div>
+    <div id="graph-container">
+      <canvas id="speed-graph"></canvas>
+    </div>
+  </div>
 
-    <script type="module">
-      import { updateEngineHours } from "/static/js/api.js";
-      document.addEventListener("DOMContentLoaded", updateEngineHours);
-    </script>
+  <!-- Engine Hours Init -->
+  <script type="module">
+    import { updateEngineHours } from "/static/js/api.js";
+    document.addEventListener("DOMContentLoaded", updateEngineHours);
+  </script>
 
+  <!-- Resizer Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const resizer = document.getElementById("resizer");
+      const mapContainer = document.getElementById("map-container");
+      const graphContainer = document.getElementById("graph-container");
+
+      let isDragging = false;
+
+      resizer.addEventListener("mousedown", () => {
+        isDragging = true;
+        document.body.style.cursor = "row-resize";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        const containerTop = document.getElementById("main-container").offsetTop;
+        const totalHeight = document.getElementById("main-container").clientHeight;
+        const mapHeight = e.clientY - containerTop;
+        const graphHeight = totalHeight - mapHeight - resizer.offsetHeight;
+
+        if (mapHeight < 100 || graphHeight < 100) return;
+
+        mapContainer.style.flex = "none";
+        mapContainer.style.height = `${mapHeight}px`;
+        graphContainer.style.height = `${graphHeight}px`;
+
+        if (window.map?.invalidateSize) {
+          window.map.invalidateSize();
+        }
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        document.body.style.cursor = "default";
+      });
+    });
+  </script>
 </body>
 </html>

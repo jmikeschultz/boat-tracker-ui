@@ -1,5 +1,5 @@
 import { highlightGraphPoint } from "./graph.js";
-
+import { SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES, IDLE_MIN_SECS, ANIMATION_SPEED_FACTOR } from "./constants.js";
 let map;
 let highlightMarker = null;
 
@@ -26,9 +26,6 @@ export function updateMap(positions) {
     });
 
     // Build polyline segments
-    const MAX_TIME_GAP = 300; // seconds
-    const MAX_DISTANCE_GAP = 1.0; // miles
-
     const SEGMENT_COLORS = [
 	"#0074D9", // blue
 	"#2ECC40", // green
@@ -51,24 +48,26 @@ export function updateMap(positions) {
 
     let segments = [];
     let currentSegment = [];
+    let prev = null;
 
     for (let i = 0; i < positions.length; i++) {
 	const pos = positions[i];
 	const latLng = [pos.latitude, pos.longitude];
 
-	if (i === 0) {
+	if (!prev) {
+            // First point
             currentSegment.push(latLng);
+            prev = pos;
             continue;
 	}
 
-	const prev = positions[i - 1];
 	const timeGap = pos.utc_shifted_tstamp - prev.utc_shifted_tstamp;
 	const distanceGap = calculateDistance(
             pos.latitude, pos.longitude,
             prev.latitude, prev.longitude
 	);
 
-	if (timeGap > MAX_TIME_GAP || distanceGap > MAX_DISTANCE_GAP) {
+	if (timeGap > SEGMENT_MAX_GAP_SECS || distanceGap > SEGMENT_MAX_GAP_MILES) {
             if (currentSegment.length > 1) {
 		segments.push(currentSegment);
             }
@@ -76,9 +75,11 @@ export function updateMap(positions) {
 	} else {
             currentSegment.push(latLng);
 	}
+
+	prev = pos;
     }
 
-    if (currentSegment.length > 1) {
+    if (currentSegment.length > 0) {
 	segments.push(currentSegment);
     }
 
@@ -86,6 +87,32 @@ export function updateMap(positions) {
     segments.forEach((segment, index) => {
 	const color = SEGMENT_COLORS[index % SEGMENT_COLORS.length];
 	L.polyline(segment, { color, weight: 4 }).addTo(map);
+
+	const segmentId = `segment-${index}`;
+
+	// Use the first and last points to find matching full-position objects
+	const startCoord = segment[0];
+	const segmentPositions = positions.filter(pos =>
+            segment.some(coord =>
+		Math.abs(coord[0] - pos.latitude) < 0.00001 &&
+		    Math.abs(coord[1] - pos.longitude) < 0.00001
+            )
+	);
+
+	// Create a custom button
+	const playDiv = document.createElement("div");
+	playDiv.className = "play-button-icon";
+	playDiv.innerText = "▶️";
+
+	const playIcon = L.divIcon({
+            html: playDiv,
+            className: "",
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+	});
+
+	const playMarker = L.marker(startCoord, { icon: playIcon }).addTo(map);
+	playMarker.on("click", () => animateSegment(segmentId, segmentPositions, playDiv));
     });
 
     // Fit the map to all visible points
@@ -95,34 +122,21 @@ export function updateMap(positions) {
 	map.fitBounds(bounds, { padding: [50, 50] });
     }
 
-    // Idle point grouping
-    const minDuration = 900;
-    let groupedPoints = [];
-    let currentGroup = null;
 
+    // Set pins at idle positions
     positions.forEach((pos) => {
-        const { latitude: lat, longitude: lon, utc_shifted_tstamp: timestamp } = pos;
+	const { latitude: lat, longitude: lon, duration_secs, local_time } = pos;
 
-        if (currentGroup && lat === currentGroup.lat && lon === currentGroup.lon) {
-            currentGroup.endTime = timestamp;
-        } else {
-            if (currentGroup) groupedPoints.push(currentGroup);
-            currentGroup = { lat, lon, startTime: timestamp, endTime: timestamp };
-        }
-    });
+	if (duration_secs >= 900) {
+            const [year, month, day] = local_time.slice(0, 10).split("-");
+	    const dateOnly = `${month.padStart(2, "0")}/${day.padStart(2, "0")}/${year}`; // MM/DD/YYYY
+            const timeOnly = local_time.slice(11, 19); // HH:MM:SS
+            const durationStr = `${String(Math.floor(duration_secs / 3600)).padStart(2, "0")}:${String(Math.floor((duration_secs % 3600) / 60)).padStart(2, "0")}:${String(Math.floor(duration_secs % 60)).padStart(2, "0")}`;
 
-    if (currentGroup) groupedPoints.push(currentGroup);
-
-    groupedPoints.forEach(group => {
-        const duration = group.endTime - group.startTime;
-        if (duration >= minDuration) {
-            const durationText = `${Math.round(duration / 60)} min`;
-            L.marker([group.lat, group.lon])
-                .bindPopup(
-                    `Time Spent: ${durationText}<br>First: ${new Date(group.startTime * 1000).toLocaleString()}<br>Last: ${new Date(group.endTime * 1000).toLocaleString()}`
-                )
-                .addTo(map);
-        }
+            L.marker([lat, lon])
+		.bindPopup(`${dateOnly} ${timeOnly}<br>duration: ${durationStr}`)
+		.addTo(map);
+	}
     });
 
     map.on("moveend", () => {
@@ -194,4 +208,74 @@ export function clearGraphAndMap() {
             }
         });
     }
+}
+
+
+const segmentAnimations = new Map(); // Track active animations per segment
+
+function animateSegment(segmentId, positions, playButton) {
+    // Cancel existing animation if running
+    if (segmentAnimations.has(segmentId)) {
+        const { marker, frame } = segmentAnimations.get(segmentId);
+        cancelAnimationFrame(frame);
+        map.removeLayer(marker);
+        segmentAnimations.delete(segmentId);
+        playButton.innerText = "▶️";
+        return;
+    }
+
+    // Create the marker
+    const marker = L.circleMarker([positions[0].latitude, positions[0].longitude], {
+        radius: 6,
+        color: 'orange',
+        fillColor: 'orange',
+        fillOpacity: 1,
+    }).addTo(map);
+
+    playButton.innerText = "⏸️"; // Switch to pause icon
+
+    let i = 0;
+    let frame;
+
+    function moveNext() {
+        if (i >= positions.length - 1) {
+            map.removeLayer(marker);
+            segmentAnimations.delete(segmentId);
+            playButton.innerText = "▶️";
+            return;
+        }
+
+        const start = positions[i];
+        const end = positions[i + 1];
+
+        const realDuration = (end.utc_shifted_tstamp - start.utc_shifted_tstamp) * 1000; // ms
+        const duration = realDuration / ANIMATION_SPEED_FACTOR;
+
+        const startTime = performance.now();
+
+        function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const lat = start.latitude + (end.latitude - start.latitude) * progress;
+            const lng = start.longitude + (end.longitude - start.longitude) * progress;
+            const tstamp = start.utc_shifted_tstamp + (end.utc_shifted_tstamp - start.utc_shifted_tstamp) * progress;
+
+            marker.setLatLng([lat, lng]);
+
+            // Trigger graph highlight
+            highlightGraphPoint(tstamp);
+
+            if (progress < 1) {
+                frame = requestAnimationFrame(step);
+                segmentAnimations.set(segmentId, { marker, frame });
+            } else {
+                i++;
+                moveNext();
+            }
+        }
+
+        frame = requestAnimationFrame(step);
+        segmentAnimations.set(segmentId, { marker, frame });
+    }
+
+    moveNext();
 }
