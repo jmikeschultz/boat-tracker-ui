@@ -1,5 +1,5 @@
 import { highlightGraphPoint } from "./graph.js";
-import { SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES, IDLE_MIN_SECS, ANIMATION_SPEED_FACTOR } from "./constants.js";
+import { SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES, SEGMENT_COLORS, IDLE_MIN_SECS, ANIMATION_SPEED_FACTOR } from "./constants.js";
 let map;
 let highlightMarker = null;
 
@@ -24,15 +24,6 @@ export function updateMap(positions) {
             map.removeLayer(layer);
         }
     });
-
-    // Build polyline segments
-    const SEGMENT_COLORS = [
-	"#0074D9", // blue
-	"#2ECC40", // green
-	"#B10DC9", // purple
-	"#FF851B", // orange
-	"#FF4136", // red
-    ];
 
     // Reuse the haversine distance function from your Python backend
     function calculateDistance(lat1, lon1, lat2, lon2) {
