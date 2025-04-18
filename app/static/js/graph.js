@@ -34,9 +34,6 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
     const ctx = document.getElementById("speed-graph").getContext("2d");
 
     const canvas = ctx.canvas;
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-
     graphPositions = positions;
 
     let speedData = [];
@@ -99,7 +96,8 @@ export function updateSpeedGraph(positions, from_timestamp, to_timestamp) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
+	    devicePixelRatio: window.devicePixelRatio || 1, // 👈 let Chart.js scale it right
             interaction: {
                 mode: "index",
                 intersect: false,
