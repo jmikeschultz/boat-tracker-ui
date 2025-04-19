@@ -7,3 +7,14 @@ __pycache__/
 # Other ignored files
 node_modules/
 .env
+
+# Node cruft
+app/static/js/package*.json
+
+# Bytecode
+__pycache__/
+*.pyc
+
+# npm junk
+package-lock.json
+package.json

@@ -1,33 +1,42 @@
 import { loadData } from "./api.js";
 
+function formatDate(yyyymmdd) {
+  return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6)}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    const button = document.getElementById("load-button");
-    const fromDateInput = document.getElementById("from-date");
-    const toDateInput = document.getElementById("to-date");
+  const fromInput = document.getElementById("from-date");
+  const toInput = document.getElementById("to-date");
+  const loadButton = document.getElementById("load-button");
 
-    if (!fromDateInput || !toDateInput) {
-        console.error("Date inputs not found!");
-        return;
-    }
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = params.get("from");
+  const toParam = params.get("to");
 
-    // Set default values to today's date in local time
-    const today = new Date();
-    const localTo = today.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
-
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const localFrom = weekAgo.toLocaleDateString("en-CA"); // Format: YYYY-MM-DD
-
-    fromDateInput.value = localFrom;
-    toDateInput.value = localTo;
-
-    // Automatically load data for today's date range on page load
-    loadData();
-
-    if (button) {
-        button.addEventListener("click", loadData);
-        console.log("Load button event listener attached.");
+  if (fromInput && toInput) {
+    if (fromParam && toParam) {
+      // If URL params exist, use them
+      fromInput.value = formatDate(fromParam);
+      toInput.value = formatDate(toParam);
     } else {
-        console.error("Load button not found");
+      // Fallback to default range: past 7 days
+      const today = new Date();
+      const toDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD
+
+      const weekAgo = new Date(today);
+      weekAgo.setDate(today.getDate() - 7);
+      const fromDate = weekAgo.toLocaleDateString("en-CA");
+
+      fromInput.value = fromDate;
+      toInput.value = toDate;
     }
+
+    // Always call loadData after values are set
+    loadData();
+  }
+
+  if (loadButton) {
+    loadButton.addEventListener("click", loadData);
+    console.log("Load button event listener attached.");
+  }
 });
