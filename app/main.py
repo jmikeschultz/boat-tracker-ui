@@ -1,4 +1,8 @@
+import os
 from fastapi import FastAPI, Query, HTTPException
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
@@ -6,13 +10,28 @@ from google.cloud import firestore
 from .services.firestore import fs_fetch_positions
 
 app = FastAPI()
+security = HTTPBasic()
+
+USERNAME = os.getenv("TRACKER_UI_USERNAME")
+PASSWORD = os.getenv("TRACKER_UI_PASSWORD")
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, USERNAME)
+    correct_password = secrets.compare_digest(credentials.password, PASSWORD)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home():
+async def home(user: str = Depends(verify_credentials)):
     """
     Serve the main page for the boat tracker app.
     """
@@ -26,6 +45,7 @@ async def home():
 async def get_positions(
     from_date: str = Query(..., regex="^\d{8}$", description="Start date in YYYYMMDD format"),
     to_date: str = Query(..., regex="^\d{8}$", description="End date in YYYYMMDD format"),
+    user: str = Depends(verify_credentials)
 ):
     """
     Fetch positions within the specified date range.
@@ -64,7 +84,7 @@ async def get_positions(
 
 
 @app.get("/engine-hours/latest")
-async def get_latest_engine_hours():
+async def get_latest_engine_hours(user: str = Depends(verify_credentials)):
     """Fetch the latest recorded engine hours from Firestore."""
     #db = firestore.Client()
 
