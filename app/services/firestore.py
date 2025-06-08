@@ -20,7 +20,7 @@ def get_lat_lon_time_values(pos):
 #
 # adds to pos object
 #
-def add_values(prev_pos, pos):
+def add_speed(prev_pos, pos):
     prev_lat, prev_lon, prev_utc_tstamp, prev_tz_offset = get_lat_lon_time_values(prev_pos)
     lat, lon, utc_tstamp, tz_offset = get_lat_lon_time_values(pos)
 
@@ -34,7 +34,6 @@ def add_values(prev_pos, pos):
         pos['mph'] = 0.0
         pos['knots'] = 0.0
         pos['delta_miles'] = 0.0
-        pos['delta_secs'] = 0.0
         return
 
     delta_secs = utc_tstamp - prev_utc_tstamp
@@ -44,40 +43,13 @@ def add_values(prev_pos, pos):
     pos['mph'] = mph
     pos['knots'] = (mph * 0.868976)  # Convert to knots
     pos['delta_miles'] = delta_miles
-    pos['delta_secs'] = delta_secs
     return 
 
-def has_moved(prev_pos, pos):
-    if prev_pos is None:
-        return True
-    
-    prev_lat, prev_lon, prev_utc_tstamp, prev_tz_offset = get_lat_lon_time_values(prev_pos)
-    lat, lon, utc_tstamp, tz_offset = get_lat_lon_time_values(pos)
-
-    delta_miles = calculate_distance(lat, lon, prev_lat, prev_lon)
-    return delta_miles > 0
-    
-def process_raw_positionsx(raw_positions):
-    positions = []
-    prev_pos = None
-
-    for raw in raw_positions:
-        pos = raw.to_dict()
-        if prev_pos is None:
-            prev_pos = pos
-        
-        add_values(prev_pos, pos)
-        print(json.dumps(pos, indent=1))
-        positions.append(pos)
-        moved = pos.get('moved')
-        prev_pos = pos if moved else prev_pos
-
-    return positions
 #
 # prev_pos points to last collected position or None
 # pos points to ignored position at later time
 #
-def add_duration(pos, prev_pos):
+def add_duration_2prev(pos, prev_pos):
     if prev_pos is None:
         return
     
@@ -86,29 +58,28 @@ def add_duration(pos, prev_pos):
     later_tstamp = pos.get('utc_shifted_tstamp')
     duration_secs = later_tstamp - start_tstamp
     prev_pos['duration_secs'] = duration_secs
-    prev_pos['data_points'] = data_points
-    print('ds', duration_secs, 'points', data_points)
     
 
-def process_raw_positionsy(raw_positions):
+def process_raw_positions(raw_positions):
     positions = []
 
     # raw_positions is a stream, not list
     prev_pos = None
     for raw in raw_positions:
         pos = raw.to_dict()
-        if has_moved(prev_pos, pos):
+        is_delta = pos.get('is_delta')
+        if is_delta:
             positions.append(pos)
             prev_pos = pos
         else:
-            add_duration(pos, prev_pos)
+            add_duration_2prev(pos, prev_pos)
 
     look_back = 2
     first_pos = positions[0]
     for idx in range(0, len(positions)):
         pos = positions[idx]
         prev_pos = first_pos if idx < look_back else positions[idx - look_back]
-        add_values(prev_pos, pos)
+        add_speed(prev_pos, pos)
 
     return positions
 
@@ -132,4 +103,4 @@ async def fs_fetch_positions(db, from_timestamp: int, to_timestamp: int):
     query = query.where(filter=FieldFilter("utc_shifted_tstamp", "<=", to_timestamp))
     query = query.order_by("utc_shifted_tstamp")  # Sort by timestamp
 
-    return process_raw_positionsy(query.stream())
+    return process_raw_positions(query.stream())
