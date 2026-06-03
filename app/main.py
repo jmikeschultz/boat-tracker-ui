@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 from google.cloud import firestore
-from .services.firestore import fs_fetch_positions
+from .services.firestore import fs_fetch_positions, segment_positions
 
 app = FastAPI()
 security = HTTPBasic()
@@ -26,8 +26,16 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Mount static files with caching disabled for development reload sync
+class NoCacheStaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+app.mount("/static", NoCacheStaticFiles(directory="app/static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -65,15 +73,17 @@ async def get_positions(
 
         db = firestore.Client(project="boat-crumbs")
         positions = await fs_fetch_positions(db, from_timestamp, to_timestamp)
+        segments = segment_positions(positions)
 
         if positions:
-            print(f"✅ main.py: Fetched {len(positions)} records.")
+            print(f"✅ main.py: Fetched {len(positions)} records, grouped into {len(segments)} segments.")
             print(f"📌 First position: {positions[0]}")
         else:
             print("No positions found, returning default data.")
 
         return {
             "positions": positions,
+            "segments": segments,
             "from_timestamp": from_timestamp,
             "to_timestamp": to_timestamp
         }

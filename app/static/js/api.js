@@ -1,8 +1,7 @@
 // api.js
 import { updateSpeedGraph } from "./graph.js";
 import { updateMap, clearGraphAndMap } from "./map.js";
-import { segmentPositions } from "./shared/data.js";
-import { SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES, SEGMENT_COLORS } from "./constants.js";
+import { SEGMENT_COLORS } from "./constants.js";
 
 export async function updateEngineHours() {
   try {
@@ -44,8 +43,8 @@ export async function loadData() {
     console.log("from_timestamp:", data.from_timestamp);
     console.log("to_timestamp:", data.to_timestamp);
 
-    if (data.positions && data.positions.length > 0) {
-      const segments = segmentPositions(data.positions, SEGMENT_MAX_GAP_SECS, SEGMENT_MAX_GAP_MILES);
+    if (data.segments && data.segments.length > 0) {
+      const segments = data.segments;
       segments.forEach((segment, index) => {
         const color = SEGMENT_COLORS[index % SEGMENT_COLORS.length];
         segment.forEach(pos => {
