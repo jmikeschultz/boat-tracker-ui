@@ -34,6 +34,20 @@ export function updateMap(positions) {
   });
 
   [...segmentGroups.entries()].forEach(([segmentIndex, segment]) => {
+    // Calculate segment distance using Leaflet's distanceTo (in meters)
+    let totalDistMeters = 0;
+    for (let idx = 0; idx < segment.length - 1; idx++) {
+      const p1 = L.latLng(segment[idx].latitude, segment[idx].longitude);
+      const p2 = L.latLng(segment[idx+1].latitude, segment[idx+1].longitude);
+      totalDistMeters += p1.distanceTo(p2);
+    }
+    const totalDistMiles = totalDistMeters * 0.000621371;
+    const isStationary = segment.length <= 2 && totalDistMiles < 0.1;
+
+    if (isStationary) {
+      return; // Do not draw play button or polyline for stationary stays
+    }
+
     const color = SEGMENT_COLORS[segmentIndex % SEGMENT_COLORS.length];
     const latLngs = segment.map(pos => [pos.latitude, pos.longitude]);
     L.polyline(latLngs, { color, weight: 4 }).addTo(map);
