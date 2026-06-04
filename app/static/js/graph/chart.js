@@ -42,15 +42,20 @@ export function createChart(ctx, speedDatasets, rpmData, maxSpeed, maxRPM, graph
           callbacks: {
             title(tooltipItems) {
               const item = tooltipItems[0];
-              const rawTime = item.raw?.meta?.localTime;
-              if (!rawTime) return "";
-              return rawTime.split(".")[0];
+              const meta = item.raw?.meta;
+              if (!meta) return "";
+              const segIndex = meta.segmentIndex !== undefined ? `(${meta.segmentIndex}) ` : "";
+              const timeStr = meta.localTime ? meta.localTime.substring(0, 19) : "";
+              return `${segIndex}${timeStr}`;
             },
             label(context) {
+              const meta = context.raw?.meta;
+              const distStr = meta && meta.cumulativeDistance !== undefined ? `${meta.cumulativeDistance.toFixed(2)} mi` : "";
+
               if (context.dataset.label === "RPM") {
-                return `RPM: ${context.formattedValue}`;
+                return `${context.formattedValue} RPM ${distStr}`;
               }
-              return `Speed: ${context.formattedValue}`;
+              return `${context.formattedValue} knots ${distStr}`;
             },
           },
         },

@@ -322,7 +322,7 @@ async def fs_fetch_positions(db, from_timestamp: int, to_timestamp: int):
 SEGMENT_MAX_GAP_SECS = 1800     # 30 minutes
 SEGMENT_MAX_GAP_MILES = 1.0     # 1.0 mile
 
-def segment_positions(positions, max_gap_secs=SEGMENT_MAX_GAP_SECS, max_gap_miles=SEGMENT_MAX_GAP_MILES):
+def segment_positions(positions, max_gap_secs=SEGMENT_MAX_GAP_SECS, max_gap_miles=SEGMENT_MAX_GAP_MILES, filter_stationary=True):
     """Segment a list of positions into trips based on time and distance gaps."""
     segments = []
     current_segment = []
@@ -351,5 +351,32 @@ def segment_positions(positions, max_gap_secs=SEGMENT_MAX_GAP_SECS, max_gap_mile
         
     if len(current_segment) > 0:
         segments.append(current_segment)
+        
+    if filter_stationary:
+        filtered_segments = []
+        for seg in segments:
+            pts_count = len(seg)
+            if pts_count == 0:
+                continue
+            start_ts = seg[0]["utc_shifted_tstamp"]
+            end_ts = seg[-1]["utc_shifted_tstamp"]
+            duration = end_ts - start_ts
+            if pts_count == 1 and "duration_secs" in seg[0]:
+                duration = seg[0]["duration_secs"]
+                
+            total_dist = 0.0
+            seg_prev = None
+            for p in seg:
+                if not seg_prev:
+                    seg_prev = p
+                    continue
+                total_dist += calculate_distance(p["latitude"], p["longitude"], seg_prev["latitude"], seg_prev["longitude"])
+                seg_prev = p
+                
+            is_stationary = pts_count <= 2 and total_dist < 0.1
+            if is_stationary and duration < 1800:
+                continue
+            filtered_segments.append(seg)
+        segments = filtered_segments
         
     return segments

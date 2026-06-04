@@ -33,7 +33,7 @@ def fetch_and_analyze(filter_spurious):
     print(f"Fetched {len(raw_positions)} documents in {fetch_time:.2f} seconds.")
     
     positions = process_raw_positions(raw_positions, filter_spurious=filter_spurious)
-    segments = segment_positions(positions)
+    segments = segment_positions(positions, filter_stationary=False)
     print(f"Identified {len(segments)} segments.\n")
     
     # Print table header
@@ -115,7 +115,7 @@ def fetch_and_analyze(filter_spurious):
         
         print(f"{printed_count:<6} | {start_date:<19} | {end_date:<19} | {pts_count:<5} | {total_dist:>7.2f} mi | {format_duration(duration):<12} | {max_speed:>7.1f} mph | {likelihood_str}")
 
-    print(f"\nSkipped {skipped_segments} stationary/idle segments (<= 2 points and < 0.1 miles).")
+    print(f"\nSkipped {skipped_segments} short stationary/idle segments (<= 2 points, < 0.1 miles, and < 30 minutes duration).")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze GPS segments from Firestore.")

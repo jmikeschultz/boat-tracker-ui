@@ -26,19 +26,129 @@ main {
     padding: 20px;
 }
 
-/* ✅ Fix date pickers layout */
+/* ✅ New controls layout with yearly timeline */
 #controls {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     padding: 10px 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-#controls label,
-#controls input,
-#controls button {
+#controls label {
     font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+#year-select {
+    font-size: 14px;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#timeline-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#timeline-container {
+    position: relative;
+    width: 100%;
+    height: 45px;
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+#timeline-months {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+#timeline-months div {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    font-weight: 500;
+}
+
+#date-range-display {
+    font-size: 13px;
+    font-weight: bold;
+    color: #444;
+    padding: 8px 12px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: monospace;
+}
+
+#timeline-chart {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#brush-window {
+    position: absolute;
+    top: 0;
+    left: 80%;
+    width: 5%;
+    height: 100%;
+    background-color: rgba(0, 116, 217, 0.15);
+    border-left: 2px solid #0074d9;
+    border-right: 2px solid #0074d9;
+    z-index: 2;
+    cursor: grab;
+    box-sizing: border-box;
+}
+
+#brush-window:active {
+    cursor: grabbing;
+}
+
+.brush-handle {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background-color: rgba(0, 116, 217, 0.3);
+    cursor: ew-resize;
+    z-index: 3;
+    transition: background-color 0.15s;
+}
+
+.brush-handle:hover {
+    background-color: #0074d9;
+}
+
+.left-handle {
+    left: -5px;
+}
+
+.right-handle {
+    right: -5px;
 }
 
 /* ✅ New layout for map + resizable graph */

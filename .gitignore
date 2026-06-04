@@ -18,3 +18,7 @@ __pycache__/
 # npm junk
 package-lock.json
 package.json
+
+# Cache folder
+app/cache/
+
