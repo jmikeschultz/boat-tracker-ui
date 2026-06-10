@@ -9,17 +9,78 @@ html, body {
 
 header {
     background-color: #f0f0f0;
-    padding: 10px;
-    text-align: center;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-title-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
 }
 
 header h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #333;
+}
+
+.nav-btn {
+    background: rgba(0, 116, 217, 0.08);
+    color: #0074d9;
+    border: 1px solid rgba(0, 116, 217, 0.2);
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#btn-prev-week {
+    left: 20px;
+}
+
+#btn-next-week {
+    right: 20px;
+}
+
+.nav-btn:hover {
+    background: #0074d9;
+    color: #fff;
+    border-color: #0074d9;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 4px 10px rgba(0, 116, 217, 0.25);
+}
+
+.nav-btn:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+.nav-btn:disabled {
+    background: rgba(0, 0, 0, 0.04);
+    color: #aaa;
+    border-color: rgba(0, 0, 0, 0.06);
+    cursor: not-allowed;
+    transform: translateY(-50%);
+    box-shadow: none;
 }
 
 header div {
-    margin-top: 10px;
+    margin: 0;
 }
 
 main {
@@ -186,6 +247,18 @@ main {
     flex-grow: 0;
     flex-basis: auto;
     display: block;
+    position: relative;
+}
+
+#engine-hours-container {
+    position: absolute;
+    right: 55px;
+    bottom: 8px;
+    font-size: 11px;
+    color: #666;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+    z-index: 10;
 }
 
 #speed-graph {

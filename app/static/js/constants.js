@@ -7,6 +7,4 @@ export const SEGMENT_COLORS = [
     "#FF851B", // orange
     "#FF4136", // red
 ];
-
-
-
+export const MIN_MOTION_SPEED = 1.5;

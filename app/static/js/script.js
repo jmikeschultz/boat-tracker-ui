@@ -1,4 +1,4 @@
-import { loadYearData, updateFocusedWindow } from "./api.js";
+import { loadYearData, updateFocusedWindow, getNextActiveWindow } from "./api.js";
 
 function tsToYYYYMMDD(ts) {
   const d = new Date(ts * 1000);
@@ -54,6 +54,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return e.clientX;
   }
 
+  const prevBtn = document.getElementById("btn-prev-week");
+  const nextBtn = document.getElementById("btn-next-week");
+
+  function updateNavButtons(startTs, endTs) {
+    if (!prevBtn || !nextBtn) return;
+    const hasPrev = getNextActiveWindow(startTs, endTs, "prev") !== null;
+    const hasNext = getNextActiveWindow(startTs, endTs, "next") !== null;
+    prevBtn.disabled = !hasPrev;
+    nextBtn.disabled = !hasNext;
+  }
+
   // Global hooks for api.js to initialize/update the slider
   window.initBrushWindow = (focusStart, focusEnd, yearStart, yearEnd) => {
     currentYearStart = yearStart;
@@ -75,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.history.replaceState({}, "", url);
 
     updateFocusedWindow(focusStart, focusEnd);
+    updateNavButtons(focusStart, focusEnd);
   };
 
   window.resetBrushWindow = () => {
@@ -225,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.history.replaceState({}, "", url);
 
     updateFocusedWindow(startTs, endTs);
+    updateNavButtons(startTs, endTs);
   }
 
   // Bind Year dropdown selection changes
@@ -252,6 +265,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const initialYear = urlYear ? parseInt(urlYear) : parseInt(yearSelect.value);
   const initialStart = urlStartStr ? yyyymmddToTs(urlStartStr, false) : null;
   const initialEnd = urlEndStr ? yyyymmddToTs(urlEndStr, true) : null;
+
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener("click", () => {
+      if (currentYearStart === 0 || currentYearEnd === 0) return;
+      const range = currentYearEnd - currentYearStart;
+      const startTs = currentYearStart + (brushLeft / 100) * range;
+      const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+
+      const newWindow = getNextActiveWindow(startTs, endTs, "prev");
+      if (newWindow) {
+        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, currentYearStart, currentYearEnd);
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (currentYearStart === 0 || currentYearEnd === 0) return;
+      const range = currentYearEnd - currentYearStart;
+      const startTs = currentYearStart + (brushLeft / 100) * range;
+      const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+
+      const newWindow = getNextActiveWindow(startTs, endTs, "next");
+      if (newWindow) {
+        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, currentYearStart, currentYearEnd);
+      }
+    });
+  }
 
   loadYearData(initialYear, initialStart, initialEnd);
 });

@@ -22,9 +22,10 @@
 </head>
 <body>
   <header>
-    <h1>Boat Tracker</h1>
-    <div id="engine-hours-container">
-      <strong>Engine Hours:</strong> <span id="engine-hours">--</span> hrs
+    <div class="header-title-container">
+      <button id="btn-prev-week" class="nav-btn" title="Previous week of motion">◀</button>
+      <h1>Boat Tracker</h1>
+      <button id="btn-next-week" class="nav-btn" title="Next week of motion">▶</button>
     </div>
   </header>
 
@@ -61,6 +62,9 @@
     <div id="resizer"></div>
     <div id="graph-container">
       <canvas id="speed-graph"></canvas>
+      <div id="engine-hours-container">
+        Engine Hours: <span id="engine-hours">--</span> hrs
+      </div>
     </div>
   </div>
 

@@ -1,7 +1,7 @@
 // api.js
 import { updateSpeedGraph } from "./graph.js";
 import { updateMap, clearGraphAndMap } from "./map.js";
-import { SEGMENT_COLORS } from "./constants.js";
+import { SEGMENT_COLORS, MIN_MOTION_SPEED } from "./constants.js";
 
 export async function updateEngineHours() {
   try {
@@ -79,8 +79,8 @@ function renderTimelineChart(positions, startTs, endTs) {
 }
 
 function findDefaultActiveWindow(positions, segments, startTs, endTs) {
-  // Find the latest position with speed >= 3.0 mph
-  const activePositions = positions.filter(p => (p.mph || 0) >= 3.0);
+  // Find the latest position with speed >= MIN_MOTION_SPEED mph
+  const activePositions = positions.filter(p => (p.mph || 0) >= MIN_MOTION_SPEED);
   
   let targetTs;
   if (activePositions.length > 0) {
@@ -107,6 +107,39 @@ function findDefaultActiveWindow(positions, segments, startTs, endTs) {
   }
 
   return { focusStart, focusEnd };
+}
+
+export function getNextActiveWindow(currentStartTs, currentEndTs, direction) {
+  if (!yearlyData || !yearlyData.positions || yearlyData.positions.length === 0) return null;
+
+  // Filter positions to active ones (speed >= MIN_MOTION_SPEED)
+  const activePositions = yearlyData.positions.filter(p => (p.mph || 0) >= MIN_MOTION_SPEED);
+  if (activePositions.length === 0) return null;
+
+  if (direction === "prev") {
+    // Find latest active position that is strictly before currentStartTs
+    const target = currentStartTs - 10;
+    const candidates = activePositions.filter(p => p.utc_shifted_tstamp < target);
+    if (candidates.length === 0) return null;
+    
+    const latestActive = candidates[candidates.length - 1];
+    const focusEnd = latestActive.utc_shifted_tstamp;
+    let focusStart = focusEnd - 7 * 86400;
+    if (focusStart < currentYearStartTs) focusStart = currentYearStartTs;
+    return { focusStart, focusEnd };
+  } else if (direction === "next") {
+    // Find earliest active position that is strictly after currentEndTs
+    const target = currentEndTs + 10;
+    const candidates = activePositions.filter(p => p.utc_shifted_tstamp > target);
+    if (candidates.length === 0) return null;
+    
+    const earliestActive = candidates[0];
+    const focusStart = earliestActive.utc_shifted_tstamp;
+    let focusEnd = focusStart + 7 * 86400;
+    if (focusEnd > currentYearEndTs) focusEnd = currentYearEndTs;
+    return { focusStart, focusEnd };
+  }
+  return null;
 }
 
 export async function loadYearData(year, customStartTs = null, customEndTs = null) {
