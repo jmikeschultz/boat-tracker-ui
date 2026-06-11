@@ -43,7 +43,7 @@ export function buildGraph(chartContext, segments) {
      const width = segDuration / totalDuration;
  
      const segmentSpeedData = [];
-     const segmentColor = segment[0]._segmentColor || SEGMENT_COLORS[segment[0]._segmentIndex % SEGMENT_COLORS.length] || "blue";
+     const segmentColor = segment[0]._segmentColor || SEGMENT_COLORS[(segment[0]._segmentIndex - 1) % SEGMENT_COLORS.length] || "blue";
  
      let cumulativeDist = 0.0;
  

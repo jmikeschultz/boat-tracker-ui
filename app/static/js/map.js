@@ -48,7 +48,7 @@ export function updateMap(positions) {
       return; // Do not draw play button or polyline for stationary stays
     }
 
-    const color = SEGMENT_COLORS[segmentIndex % SEGMENT_COLORS.length];
+    const color = segment[0]._segmentColor || SEGMENT_COLORS[(segmentIndex - 1) % SEGMENT_COLORS.length] || "blue";
     const latLngs = segment.map(pos => [pos.latitude, pos.longitude]);
     L.polyline(latLngs, { color, weight: 4 }).addTo(map);
 
