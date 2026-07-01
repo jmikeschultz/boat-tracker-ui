@@ -318,9 +318,23 @@ async def fs_fetch_positions(db, from_timestamp: int, to_timestamp: int):
     return process_raw_positions(raw_positions)
 
 
-# Centralized Segmentation Constants
-SEGMENT_MAX_GAP_SECS = 1800     # 30 minutes
-SEGMENT_MAX_GAP_MILES = 1.0     # 1.0 mile
+# Track Rejection Constants (Glossary of Rejection Variables)
+#
+# SEGMENT_MAX_GAP_SECS: The maximum time gap allowed between consecutive points. Exceeding this splits points into a new segment (Default: 1800s / 30 mins).
+# SEGMENT_MAX_GAP_MILES: The maximum straight-line distance gap allowed between consecutive points. Exceeding this splits points into a new segment (Default: 1.0 mi).
+# STATIONARY_POINTS_THRESHOLD: The maximum number of points a segment can contain to be eligible for stationary filtering (Default: 2).
+# STATIONARY_DISTANCE_THRESHOLD: The maximum accumulated distance a segment can cover to be classified as stationary (Default: 0.1 mi).
+# STATIONARY_DURATION_THRESHOLD: The cutoff duration. Any stationary segment shorter than this is discarded (Default: 1800s / 30 mins).
+# MIN_SEGMENT_RADIUS_MILES: The minimum radius of displacement required from the starting point for a segment to be considered a real trip (Default: 1.5 mi).
+# MIN_TRIP_POINTS: The minimum number of coordinate points required in a segment for it to be displayed as an active trip (Default: 5).
+
+SEGMENT_MAX_GAP_SECS = 1800
+SEGMENT_MAX_GAP_MILES = 1.0
+STATIONARY_POINTS_THRESHOLD = 2
+STATIONARY_DISTANCE_THRESHOLD = 0.1
+STATIONARY_DURATION_THRESHOLD = 1800
+MIN_SEGMENT_RADIUS_MILES = 1.5
+MIN_TRIP_POINTS = 5
 
 def segment_positions(positions, max_gap_secs=SEGMENT_MAX_GAP_SECS, max_gap_miles=SEGMENT_MAX_GAP_MILES, filter_stationary=True):
     """Segment a list of positions into trips based on time and distance gaps."""
@@ -373,9 +387,24 @@ def segment_positions(positions, max_gap_secs=SEGMENT_MAX_GAP_SECS, max_gap_mile
                 total_dist += calculate_distance(p["latitude"], p["longitude"], seg_prev["latitude"], seg_prev["longitude"])
                 seg_prev = p
                 
-            is_stationary = pts_count <= 2 and total_dist < 0.1
-            if is_stationary and duration < 1800:
+            # Calculate max radius from start point
+            start_p = seg[0]
+            max_radius = 0.0
+            for p in seg:
+                r = calculate_distance(p["latitude"], p["longitude"], start_p["latitude"], start_p["longitude"])
+                if r > max_radius:
+                    max_radius = r
+                    
+            # Basic stationary check
+            is_stationary = pts_count <= STATIONARY_POINTS_THRESHOLD and total_dist < STATIONARY_DISTANCE_THRESHOLD
+            if is_stationary and duration < STATIONARY_DURATION_THRESHOLD:
                 continue
+                
+            # Mooring hop check for active trips (multi-point segments)
+            # If the segment's maximum displacement radius is less than the threshold, we classify it as a spurious mooring hop and discard it.
+            if pts_count > 1 and max_radius < MIN_SEGMENT_RADIUS_MILES:
+                continue
+                
             filtered_segments.append(seg)
         segments = filtered_segments
         

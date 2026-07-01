@@ -43,8 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let brushWidth = 0;
 
   // Active year timestamps
-  let currentYearStart = 0;
-  let currentYearEnd = 0;
+  let timelineStart = 0;
+  let timelineEnd = 0;
 
   // Helper to extract X position across Mouse/Touch events
   function getClientX(e) {
@@ -67,8 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Global hooks for api.js to initialize/update the slider
   window.initBrushWindow = (focusStart, focusEnd, yearStart, yearEnd) => {
-    currentYearStart = yearStart;
-    currentYearEnd = yearEnd;
+    timelineStart = yearStart;
+    timelineEnd = yearEnd;
 
     const range = yearEnd - yearStart;
     brushLeft = ((focusStart - yearStart) / range) * 100;
@@ -203,10 +203,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("touchend", onRelease);
 
   function updateDateDisplayOnly() {
-    if (currentYearStart === 0 || currentYearEnd === 0) return;
-    const range = currentYearEnd - currentYearStart;
-    const startTs = currentYearStart + (brushLeft / 100) * range;
-    const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+    if (timelineStart === 0 || timelineEnd === 0) return;
+    const range = timelineEnd - timelineStart;
+    const startTs = timelineStart + (brushLeft / 100) * range;
+    const endTs = timelineStart + ((brushLeft + brushWidth) / 100) * range;
 
     const rangeDisplay = document.getElementById("date-range-display");
     if (rangeDisplay) {
@@ -224,10 +224,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Helper to convert percentages to timestamps and call backend slicer
   function triggerUpdate() {
-    if (currentYearStart === 0 || currentYearEnd === 0) return;
-    const range = currentYearEnd - currentYearStart;
-    const startTs = currentYearStart + (brushLeft / 100) * range;
-    const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+    if (timelineStart === 0 || timelineEnd === 0) return;
+    const range = timelineEnd - timelineStart;
+    const startTs = timelineStart + (brushLeft / 100) * range;
+    const endTs = timelineStart + ((brushLeft + brushWidth) / 100) * range;
 
     // Update URL query parameters on drag end
     const url = new URL(window.location);
@@ -268,26 +268,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (prevBtn && nextBtn) {
     prevBtn.addEventListener("click", () => {
-      if (currentYearStart === 0 || currentYearEnd === 0) return;
-      const range = currentYearEnd - currentYearStart;
-      const startTs = currentYearStart + (brushLeft / 100) * range;
-      const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+      if (timelineStart === 0 || timelineEnd === 0) return;
+      const range = timelineEnd - timelineStart;
+      const startTs = timelineStart + (brushLeft / 100) * range;
+      const endTs = timelineStart + ((brushLeft + brushWidth) / 100) * range;
 
       const newWindow = getNextActiveWindow(startTs, endTs, "prev");
       if (newWindow) {
-        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, currentYearStart, currentYearEnd);
+        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, timelineStart, timelineEnd);
       }
     });
 
     nextBtn.addEventListener("click", () => {
-      if (currentYearStart === 0 || currentYearEnd === 0) return;
-      const range = currentYearEnd - currentYearStart;
-      const startTs = currentYearStart + (brushLeft / 100) * range;
-      const endTs = currentYearStart + ((brushLeft + brushWidth) / 100) * range;
+      if (timelineStart === 0 || timelineEnd === 0) return;
+      const range = timelineEnd - timelineStart;
+      const startTs = timelineStart + (brushLeft / 100) * range;
+      const endTs = timelineStart + ((brushLeft + brushWidth) / 100) * range;
 
       const newWindow = getNextActiveWindow(startTs, endTs, "next");
       if (newWindow) {
-        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, currentYearStart, currentYearEnd);
+        window.initBrushWindow(newWindow.focusStart, newWindow.focusEnd, timelineStart, timelineEnd);
       }
     });
   }

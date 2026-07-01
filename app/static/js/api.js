@@ -1,7 +1,7 @@
 // api.js
 import { updateSpeedGraph } from "./graph.js";
 import { updateMap, clearGraphAndMap } from "./map.js";
-import { SEGMENT_COLORS, MIN_MOTION_SPEED } from "./constants.js";
+import { SEGMENT_COLORS, MIN_MOTION_SPEED, TIMELINE_PADDING_DAYS } from "./constants.js";
 
 export async function updateEngineHours() {
   try {
@@ -23,7 +23,48 @@ export async function updateEngineHours() {
 let yearlyData = null;
 let currentYearStartTs = 0;
 let currentYearEndTs = 0;
+let timelineStartTs = 0;
+let timelineEndTs = 0;
 let timelineChart = null;
+
+function renderTimelineMonths(startTs, endTs) {
+  const container = document.getElementById("timeline-months");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const startDt = new Date(startTs * 1000);
+  const endDt = new Date(endTs * 1000);
+
+  const startYear = startDt.getUTCFullYear();
+  const startMonth = startDt.getUTCMonth();
+  const endYear = endDt.getUTCFullYear();
+  const endMonth = endDt.getUTCMonth();
+
+  let currYear = startYear;
+  let currMonth = startMonth;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  while (currYear < endYear || (currYear === endYear && currMonth <= endMonth)) {
+    const monthStartDt = new Date(Date.UTC(currYear, currMonth, 1));
+    const monthStartTs = Math.round(monthStartDt.getTime() / 1000);
+
+    const labelTs = Math.max(monthStartTs, startTs);
+    const pct = ((labelTs - startTs) / (endTs - startTs)) * 100;
+
+    if (pct >= 0 && pct <= 100) {
+      const div = document.createElement("div");
+      div.textContent = months[currMonth];
+      div.style.left = `${pct}%`;
+      container.appendChild(div);
+    }
+
+    currMonth++;
+    if (currMonth > 11) {
+      currMonth = 0;
+      currYear++;
+    }
+  }
+}
 
 function renderTimelineChart(positions, startTs, endTs) {
   const canvas = document.getElementById("timeline-chart");
@@ -34,18 +75,19 @@ function renderTimelineChart(positions, startTs, endTs) {
     timelineChart.destroy();
   }
 
-  // Create 365 daily bins
-  const dailySpeeds = new Array(365).fill(0);
+  // Create daily bins dynamically based on date range
+  const totalDays = Math.ceil((endTs - startTs) / 86400) || 1;
+  const dailySpeeds = new Array(totalDays).fill(0);
   for (const pos of positions) {
     const dayIdx = Math.floor((pos.utc_shifted_tstamp - startTs) / 86400);
-    if (dayIdx >= 0 && dayIdx < 365) {
+    if (dayIdx >= 0 && dayIdx < totalDays) {
       const speedKnots = pos.knots || 0;
       const cappedSpeed = Math.min(speedKnots, 6.0);
       dailySpeeds[dayIdx] = Math.max(dailySpeeds[dayIdx], cappedSpeed);
     }
   }
 
-  const labels = new Array(365).fill("");
+  const labels = new Array(totalDays).fill("");
 
   timelineChart = new Chart(ctx, {
     type: "line",
@@ -125,7 +167,7 @@ export function getNextActiveWindow(currentStartTs, currentEndTs, direction) {
     const latestActive = candidates[candidates.length - 1];
     const focusEnd = latestActive.utc_shifted_tstamp;
     let focusStart = focusEnd - 7 * 86400;
-    if (focusStart < currentYearStartTs) focusStart = currentYearStartTs;
+    if (focusStart < timelineStartTs) focusStart = timelineStartTs;
     return { focusStart, focusEnd };
   } else if (direction === "next") {
     // Find earliest active position that is strictly after currentEndTs
@@ -136,7 +178,7 @@ export function getNextActiveWindow(currentStartTs, currentEndTs, direction) {
     const earliestActive = candidates[0];
     const focusStart = earliestActive.utc_shifted_tstamp;
     let focusEnd = focusStart + 7 * 86400;
-    if (focusEnd > currentYearEndTs) focusEnd = currentYearEndTs;
+    if (focusEnd > timelineEndTs) focusEnd = timelineEndTs;
     return { focusStart, focusEnd };
   }
   return null;
@@ -165,7 +207,22 @@ export async function loadYearData(year, customStartTs = null, customEndTs = nul
     currentYearEndTs = data.to_timestamp;
 
     if (data.positions && data.positions.length > 0) {
-      renderTimelineChart(data.positions, currentYearStartTs, currentYearEndTs);
+      const firstPos = data.positions[0];
+      const lastPos = data.positions[data.positions.length - 1];
+      const firstActiveTs = firstPos ? firstPos.utc_shifted_tstamp : data.from_timestamp;
+      const lastActiveTs = lastPos ? lastPos.utc_shifted_tstamp : data.to_timestamp;
+
+      let startTs = firstActiveTs - TIMELINE_PADDING_DAYS * 86400;
+      let endTs = lastActiveTs + TIMELINE_PADDING_DAYS * 86400;
+
+      if (startTs < data.from_timestamp) startTs = data.from_timestamp;
+      if (endTs > data.to_timestamp) endTs = data.to_timestamp;
+
+      timelineStartTs = startTs;
+      timelineEndTs = endTs;
+
+      renderTimelineChart(data.positions, timelineStartTs, timelineEndTs);
+      renderTimelineMonths(timelineStartTs, timelineEndTs);
 
       let focusStart, focusEnd;
       if (customStartTs !== null && customEndTs !== null) {
@@ -175,8 +232,8 @@ export async function loadYearData(year, customStartTs = null, customEndTs = nul
         const defaultWindow = findDefaultActiveWindow(
           data.positions,
           data.segments,
-          currentYearStartTs,
-          currentYearEndTs
+          timelineStartTs,
+          timelineEndTs
         );
         focusStart = defaultWindow.focusStart;
         focusEnd = defaultWindow.focusEnd;
@@ -184,7 +241,7 @@ export async function loadYearData(year, customStartTs = null, customEndTs = nul
 
       // Call global window initialization provided by script.js
       if (typeof window.initBrushWindow === "function") {
-        window.initBrushWindow(focusStart, focusEnd, currentYearStartTs, currentYearEndTs);
+        window.initBrushWindow(focusStart, focusEnd, timelineStartTs, timelineEndTs);
       } else {
         updateFocusedWindow(focusStart, focusEnd);
       }

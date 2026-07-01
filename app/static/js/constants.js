@@ -8,3 +8,4 @@ export const SEGMENT_COLORS = [
     "#FF4136", // red
 ];
 export const MIN_MOTION_SPEED = 1.5;
+export const TIMELINE_PADDING_DAYS = 30;
