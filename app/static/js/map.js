@@ -4,8 +4,10 @@ import { SEGMENT_COLORS, IDLE_MIN_SECS, ANIMATION_SPEED_FACTOR } from "./constan
 
 let map;
 let highlightMarker = null;
+let currentPositions = [];
 
 export function updateMap(positions) {
+  currentPositions = positions;
   const segmentGroups = new Map();
   positions.forEach(pos => {
     if (!segmentGroups.has(pos._segmentIndex)) {
@@ -21,6 +23,17 @@ export function updateMap(positions) {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
     }).addTo(map);
+
+    map.on("moveend", () => {
+      const bounds = map.getBounds();
+      const visiblePositions = currentPositions.filter(pos =>
+        bounds.contains([pos.latitude, pos.longitude])
+      );
+
+      import("./graph/index.js").then(({ updateSpeedGraphFromMap }) => {
+        updateSpeedGraphFromMap(visiblePositions);
+      });
+    });
   }
 
   map.eachLayer(layer => {
@@ -89,16 +102,7 @@ export function updateMap(positions) {
     }
   });
 
-  map.on("moveend", () => {
-    const bounds = map.getBounds();
-    const visiblePositions = positions.filter(pos =>
-      bounds.contains([pos.latitude, pos.longitude])
-    );
 
-    import("./graph/index.js").then(({ updateSpeedGraphFromMap }) => {
-      updateSpeedGraphFromMap(visiblePositions);
-    });
-  });
 
   positions.forEach((pos) => {
     const marker = L.circleMarker([pos.latitude, pos.longitude], {

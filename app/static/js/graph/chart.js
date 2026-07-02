@@ -29,6 +29,7 @@ export function createChart(ctx, speedDatasets, rpmData, maxSpeed, maxRPM, graph
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      resizeDelay: 150,
       devicePixelRatio: window.devicePixelRatio || 1,
       interaction: {
         mode: "nearest",

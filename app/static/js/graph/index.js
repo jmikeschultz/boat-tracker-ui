@@ -20,11 +20,9 @@ export function updateSpeedGraph(_, segments) {
 
     const { chart: newChart, graphPositions } = buildGraph(ctx, segments);
     chart = newChart;
-    chart.canvas = canvasEl;
-
     setTimeout(() => {
       setupGraphHover(chart, graphPositions);
-    }, 0);
+    }, 50);
 
     window.speedChart = chart;
   });
